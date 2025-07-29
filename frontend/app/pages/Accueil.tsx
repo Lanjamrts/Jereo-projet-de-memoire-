@@ -1,13 +1,43 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Header from '../components/Header';
 import Navbar from '../components/Navbar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Accueil = () => {
+  const [token, setToken] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("");
+
+  // Récupérer le token au montage du composant
+  useEffect(() => {
+    const fetchToken = async () => {
+      const storedToken = await AsyncStorage.getItem('token');
+      const storedUser = await AsyncStorage.getItem('user');
+
+      setToken(storedToken);
+
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUserName(`${parsedUser.firstName} ${parsedUser.lastName}`);
+      }
+    };
+    fetchToken();
+  }, []);
+
   return (
     <View style={{ flex: 1 }}>
       <Header />
 
+      {/* Marque de bienvenue */}
+      <View style={styles.welcomeBox}>
+        <Text style={styles.welcomeTitle}>Bienvenue sur Jereo !</Text>
+        <Text style={styles.userName}>{userName}</Text>
+        <Text style={styles.welcomeSubtitle}>
+          Token : {token ? "Connecté" : "Pas connecté"}
+        </Text>
+      </View>
+
+      {/* Filtres */}
       <View style={styles.filters}>
         {['Tous', 'En cours', 'Pris en charge', 'Resolu'].map((label, index) => (
           <TouchableOpacity key={index} style={styles.filterButton}>
@@ -16,7 +46,9 @@ const Accueil = () => {
         ))}
       </View>
 
+      {/* Contenu principal */}
       <ScrollView style={styles.content}>
+        {/* Post exemple */}
         <View style={styles.postCard}>
           <View style={styles.userRow}>
             <Image
@@ -49,37 +81,6 @@ const Accueil = () => {
           />
         </View>
 
-        <View style={styles.postCard}>
-          <View style={styles.userRow}>
-            <Image
-              source={require('../../assets/profiles/kevinfal.jpg')}
-              style={styles.avatar}
-            />
-            <View>
-              <Text style={styles.username}>Kevin falisoa</Text>
-              <Text style={styles.timestamp}>21 min</Text>
-            </View>
-            <View style={styles.statusBadgeYellow}>
-              <Text style={styles.statusText}>Pris en charge</Text>
-            </View>
-          </View>
-
-          <Text style={styles.description}>
-            Lavaka eo ampovoan-dalana aty Tsimbazaza. Eo akaikin’ny ministeran’ny fizahàn-tany.
-          </Text>
-
-          <Image
-            source={require('../../assets/description/lavaka_lalana.jpg')}
-            style={styles.reportImage}
-          />
-
-          <Text style={styles.mapLabel}>Localisation :</Text>
-
-          <Image
-            source={require('../../assets/carte/carte.png')}
-            style={styles.mapImage}
-          />
-        </View>
 
         <View style={styles.postCard}>
           <View style={styles.userRow}>
@@ -113,6 +114,7 @@ const Accueil = () => {
           />
         </View>
 
+
         <View style={styles.postCard}>
           <View style={styles.userRow}>
             <Image
@@ -143,25 +145,42 @@ const Accueil = () => {
             source={require('../../assets/carte/carte.png')}
             style={styles.mapImage}
           />
-
         </View>
 
-        {/* Autre post */}
-        {/* <View style={styles.postCard}>
+
+        <View style={styles.postCard}>
           <View style={styles.userRow}>
             <Image
-              source={require('../assets/profile.png')}
+              source={require('../../assets/profiles/kevinfal.jpg')}
               style={styles.avatar}
             />
             <View>
-              <Text style={styles.username}>Lanja mrts</Text>
+              <Text style={styles.username}>Kevin falisoa</Text>
               <Text style={styles.timestamp}>21 min</Text>
             </View>
-            <View style={styles.statusBadgeGreen}>
-              <Text style={styles.statusText}>Resolu</Text>
+            <View style={styles.statusBadgeYellow}>
+              <Text style={styles.statusText}>Pris en charge</Text>
             </View>
           </View>
-        </View> */}
+
+          <Text style={styles.description}>
+            Lavaka eo ampovoan-dalana aty Tsimbazaza. Eo akaikin’ny ministeran’ny fizahàn-tany.
+          </Text>
+
+          <Image
+            source={require('../../assets/description/lavaka_lalana.jpg')}
+            style={styles.reportImage}
+          />
+
+          <Text style={styles.mapLabel}>Localisation :</Text>
+
+          <Image
+            source={require('../../assets/carte/carte.png')}
+            style={styles.mapImage}
+          />
+        </View>
+
+        {/* Tu peux répéter d'autres posts ici */}
       </ScrollView>
       <Navbar />
     </View>
@@ -169,6 +188,29 @@ const Accueil = () => {
 };
 
 const styles = StyleSheet.create({
+  welcomeBox: {
+    backgroundColor: '#fff',
+    padding: 10,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  welcomeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#8B0000',
+  },
+  userName: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 2,
+    marginBottom: 4,
+    color: '#444',
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    color: 'gray',
+  },
   filters: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -216,13 +258,6 @@ const styles = StyleSheet.create({
   },
   statusBadgeYellow: {
     backgroundColor: '#ffeb3b',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    marginLeft: 'auto',
-  },
-  statusBadgeGreen: {
-    backgroundColor: '#8bc34a',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 2,
