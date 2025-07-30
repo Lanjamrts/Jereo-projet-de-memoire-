@@ -28,7 +28,7 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("token", response.data.token);
         await AsyncStorage.setItem("user", JSON.stringify(response.data.user));
 
-        Alert.alert("Bienvenue", `Bonjour ${response.data.user.firstName}`);
+        Alert.alert("Bienvenue", `Bonjour ${response.data.user.firstName} ${response.data.user.lastName}!`);
         router.push("../../pages/Accueil");
       }
     } catch (error: any) {
