@@ -1,9 +1,8 @@
-import express from "express";
-import Autorite from "../models/Autorite.js";
+const express = require("express");
+const Autorite = require("../models/Autorite");
 
 const router = express.Router();
 
-// Récupérer toutes les autorités
 router.get("/", async (req, res) => {
   try {
     const autorites = await Autorite.find();
@@ -13,4 +12,4 @@ router.get("/", async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
