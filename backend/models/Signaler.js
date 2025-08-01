@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const signalerSchema = new mongoose.Schema({
   lieux: {
@@ -14,4 +14,4 @@ const signalerSchema = new mongoose.Schema({
   autoriteId: { type: mongoose.Schema.Types.ObjectId, ref: "Autorite", required: true }
 });
 
-export default mongoose.model("Signaler", signalerSchema);
+module.exports = mongoose.model("Signaler", signalerSchema);
