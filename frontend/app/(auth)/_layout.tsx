@@ -7,8 +7,8 @@ export default function AuthLayout() {
         headerShown: false // Désactive pour TOUS les écrans du groupe
       }}
     >
-      <Stack.Screen name="login" />
-      <Stack.Screen name="register" />
+      <Stack.Screen name="login/index" />
+      <Stack.Screen name="register/indexy" />
     </Stack>
   );
 }

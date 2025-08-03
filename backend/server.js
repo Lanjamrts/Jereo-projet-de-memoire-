@@ -17,10 +17,9 @@ connectDB();
 // --- Routes ---
 app.use("/api/auth", require("./routes/authRoutes"));        // Authentification
 app.use("/api/autorites", require("./routes/autorites"));
-// app.use("/api/signalements", require("./routes/signalementRoute"));
 app.use("/api/signaler", require("./routes/signalerRoute")); // Créer un signalement
 
-// --- Dossier pour les images uploadées ---
+// Rendre le dossier "uploads" accessible publiquement
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Serveur
