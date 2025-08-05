@@ -69,7 +69,7 @@ const Navbar = () => {
               pathname === "/pages/Liste" && styles.activeLabel
             ]}
           >
-            Profil
+            Mes signalements
           </Text>
         </TouchableOpacity>
       </Link>

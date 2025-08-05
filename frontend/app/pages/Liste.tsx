@@ -44,8 +44,11 @@ const HistoryScreen = () => {
           const data = await res.json();
 
           // 3. Filtrer par email
-          const filtered = data.filter(
-            (sig: Signalement) => sig.emailSignaleur === parsedUser.email
+          const filtered = data
+            .filter((sig: Signalement) => sig.emailSignaleur === parsedUser.email)
+            .sort(
+              (a: Signalement, b: Signalement) =>
+                new Date(b.dateSignalement).getTime() - new Date(a.dateSignalement).getTime()
           );
 
           setSignalements(filtered);

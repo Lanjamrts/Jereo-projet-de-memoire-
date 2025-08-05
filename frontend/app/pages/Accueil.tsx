@@ -25,19 +25,30 @@ const Accueil = () => {
 
   // Récupérer le token et user
   useEffect(() => {
-    const fetchToken = async () => {
-      const storedToken = await AsyncStorage.getItem("token");
-      const storedUser = await AsyncStorage.getItem("user");
+    const fetchSignalements = async () => {
+      try {
+        const res = await fetch(`${API_URL}/signaler`);
+        if (!res.ok) throw new Error("Erreur lors du chargement des signalements");
 
-      setToken(storedToken);
+        const data = await res.json();
 
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUserName(`${parsedUser.firstName} ${parsedUser.lastName}`);
+        // Trier du plus récent au plus ancien
+        const sortedData = data.sort(
+          (a: any, b: any) =>
+            new Date(b.dateSignalement).getTime() - new Date(a.dateSignalement).getTime()
+        );
+
+        setSignalements(sortedData);
+        setFilteredSignalements(sortedData); // Par défaut : tous
+      } catch (error) {
+        Alert.alert("Erreur", "Impossible de charger les signalements");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchToken();
+    fetchSignalements();
   }, []);
+
 
   // Charger les signalements
   useEffect(() => {
