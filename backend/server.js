@@ -19,6 +19,10 @@ app.use("/api/auth", require("./routes/authRoutes"));        // Authentification
 app.use("/api/autorites", require("./routes/autorites"));
 app.use("/api/signaler", require("./routes/signalerRoute")); // Créer un signalement
 
+// Routes protégées (JWT)
+app.use("/api/signalements", require("./routes/signalements")); // listing, update status
+app.use("/api/admin/users", require("./routes/admin.users"));   // gestion users
+
 // Rendre le dossier "uploads" accessible publiquement
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

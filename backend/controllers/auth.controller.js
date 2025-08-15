@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 exports.register = async (req, res) => {
   try {
-    const { firstName, lastName, birthDate, email, password } = req.body;
+    const { firstName, lastName, birthDate, email, password, role, autoriteId } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: "Utilisateur déjà existant" });
@@ -17,6 +17,8 @@ exports.register = async (req, res) => {
       birthDate,
       email,
       password: hashedPassword,
+      role: role || "user",
+      autoriteId: role === "autorite" ? autoriteId || null : null
     });
 
     res.status(201).json({ message: "Utilisateur créé avec succès", user: newUser });
@@ -29,13 +31,17 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate("autoriteId");
     if (!user) return res.status(400).json({ message: "Email ou mot de passe incorrect" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Email ou mot de passe incorrect" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign(
+      { id: user._id, role: user.role, autoriteId: user.autoriteId?._id || null },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     res.status(200).json({
       message: "Connexion réussie",
@@ -45,6 +51,8 @@ exports.login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        role: user.role,
+        autorite: user.autoriteId ? { id: user.autoriteId._id, nom: user.autoriteId.nom } : null
       }
     });
   } catch (error) {
