@@ -57,4 +57,28 @@ router.delete("/:id", auth, requireRole("admin"), async (req, res) => {
   }
 });
 
+// PUT : Modifier le statut
+router.put("/:id/status", auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const sig = await Signaler.findById(req.params.id);
+    if (!sig) return res.status(404).json({ message: "Signalement introuvable" });
+
+    // Autorité peut modifier le status seulement de SES signalements
+    if (req.user.role === "autorite") {
+      if (!sig.autoriteId || sig.autoriteId.toString() !== req.user.autoriteId.toString()) {
+        return res.status(403).json({ message: "Non autorisé" });
+      }
+    }
+
+    sig.status = status || sig.status;
+    await sig.save();
+
+    res.json(sig);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 module.exports = router;

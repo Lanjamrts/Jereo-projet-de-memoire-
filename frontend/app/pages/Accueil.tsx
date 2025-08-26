@@ -12,8 +12,10 @@ import {
 import Header from "../components/Header";
 import Navbar from "../components/Navbar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MapView, { Marker } from "react-native-maps";
 import { API_URL, BASE_URL } from "../constants/api";
+import { WebView } from "react-native-webview";
+import OSMMapView, { Marker } from "react-native-maps-osmdroid";
+
 
 const Accueil = () => {
   const [token, setToken] = useState<string | null>(null);
@@ -44,7 +46,8 @@ const Accueil = () => {
     const fetchSignalements = async () => {
       try {
         const res = await fetch(`${API_URL}/signaler`);
-        if (!res.ok) throw new Error("Erreur lors du chargement des signalements");
+        if (!res.ok)
+          throw new Error("Erreur lors du chargement des signalements");
 
         const data = await res.json();
         setSignalements(data);
@@ -64,7 +67,9 @@ const Accueil = () => {
     if (status === "Tous") {
       setFilteredSignalements(signalements);
     } else if (status === "En cours") {
-      setFilteredSignalements(signalements.filter((s) => s.status === "En attente"));
+      setFilteredSignalements(
+        signalements.filter((s) => s.status === "En attente")
+      );
     } else {
       setFilteredSignalements(signalements.filter((s) => s.status === status));
     }
@@ -85,25 +90,27 @@ const Accueil = () => {
 
       {/* Filtres */}
       <View style={styles.filters}>
-        {["Tous", "En cours", "Pris en charge", "Resolu"].map((label, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.filterButton,
-              selectedFilter === label && { backgroundColor: "#8B0000" },
-            ]}
-            onPress={() => applyFilter(label)}
-          >
-            <Text
+        {["Tous", "En cours", "Pris en charge", "Resolu"].map(
+          (label, index) => (
+            <TouchableOpacity
+              key={index}
               style={[
-                styles.filterText,
-                selectedFilter === label && { color: "#fff" },
+                styles.filterButton,
+                selectedFilter === label && { backgroundColor: "#8B0000" },
               ]}
+              onPress={() => applyFilter(label)}
             >
-              {label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedFilter === label && { color: "#fff" },
+                ]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          )
+        )}
       </View>
 
       {/* Contenu principal */}
@@ -128,7 +135,9 @@ const Accueil = () => {
                   style={styles.avatar}
                 />
                 <View>
-                  <Text style={styles.username}>{signalement.nomSignaleur}</Text>
+                  <Text style={styles.username}>
+                    {signalement.nomSignaleur}
+                  </Text>
                   <Text style={styles.timestamp}>
                     {new Date(signalement.dateSignalement).toLocaleDateString()}
                   </Text>
@@ -141,8 +150,12 @@ const Accueil = () => {
                     signalement.status === "Pris en charge" && {
                       backgroundColor: "#ffeb3b",
                     },
-                    signalement.status === "Resolu" && { backgroundColor: "#4caf50" },
-                    signalement.status === "En attente" && { backgroundColor: "#f44336" },
+                    signalement.status === "Resolu" && {
+                      backgroundColor: "#4caf50",
+                    },
+                    signalement.status === "En attente" && {
+                      backgroundColor: "#f44336",
+                    },
                   ]}
                 >
                   <Text style={styles.statusText}>{signalement.status}</Text>
@@ -160,26 +173,33 @@ const Accueil = () => {
 
               {/* Carte dynamique */}
               <Text style={styles.mapLabel}>Localisation :</Text>
-              <MapView
+              <WebView
                 style={styles.mapImage}
-                initialRegion={{
-                  latitude: signalement.lieux.latitude,
-                  longitude: signalement.lieux.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
+                originWhitelist={["*"]}
+                source={{
+                  html: `
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        </head>
+        <body>
+          <div id="map" style="width:100%;height:100%;"></div>
+          <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+          <script>
+            var map = L.map('map').setView([${signalement.lieux.latitude}, ${signalement.lieux.longitude}], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              maxZoom: 19,
+            }).addTo(map);
+            L.marker([${signalement.lieux.latitude}, ${signalement.lieux.longitude}]).addTo(map)
+              .bindPopup('${signalement.description}')
+              .openPopup();
+          </script>
+        </body>
+      </html>
+    `,
                 }}
-                scrollEnabled={true}
-                zoomEnabled={true}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: signalement.lieux.latitude,
-                    longitude: signalement.lieux.longitude,
-                  }}
-                  title="Incident"
-                  description={signalement.description}
-                />
-              </MapView>
+              />
             </View>
           ))
         )}
