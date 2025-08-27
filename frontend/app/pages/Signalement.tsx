@@ -1,151 +1,3 @@
-// import React, { useState } from 'react';
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   Image,
-//   TouchableOpacity,
-//   TextInput,
-// } from 'react-native';
-// import Header from '../components/Header';
-// import Navbar from '../components/Navbar';
-// import { Picker } from '@react-native-picker/picker';
-
-// const Signalement = () => {
-//   const [selectedService, setSelectedService] = useState('Pompier');
-
-//   return (
-//     <View style={{ flex: 1 }}>
-//       <Header />
-
-//       <View style={styles.container}>
-//         <Image
-//           source={require('../../assets/carte/carte.png')}
-//           style={styles.mapImage}
-//         />
-
-//         <TouchableOpacity style={styles.photoButton} disabled={true}>
-//           <Text style={styles.photoButtonText}>+ Prendre une photo</Text>
-//         </TouchableOpacity>
-
-//         <View style={styles.dropdownContainer}>
-//           <Picker
-//             selectedValue={selectedService}
-//             onValueChange={(itemValue) => setSelectedService(itemValue)}
-//             style={styles.picker}
-//           >
-//             <Picker.Item label="Pompier" value="Pompier" />
-//             <Picker.Item label="Police" value="Police" />
-//             <Picker.Item label="Ambulance" value="Ambulance" />
-//           </Picker>
-//         </View>
-
-//         <TextInput
-//           style={styles.description}
-//           multiline
-//           placeholder="Description....."
-//         />
-
-//         <TouchableOpacity style={styles.reportButton}>
-//           <Image
-//             source={require('../../assets/icons/logo jereo.png')}
-//             style={styles.reportIcon}
-//           />
-//           <Text style={styles.reportButtonText}>Signaler</Text>
-//         </TouchableOpacity>
-
-//       </View>
-
-//       <Navbar />
-//     </View>
-//   );
-// };
-
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     padding: 15,
-//     backgroundColor: '#fff',
-//   },
-//   mapImage: {
-//     width: '100%',
-//     height: 220,
-//     borderRadius: 12,
-//     marginBottom: 15,
-//   },
-//   photoButton: {
-//     backgroundColor: '#f5f5f5',
-//     borderRadius: 10,
-//     paddingVertical: 14,
-//     alignItems: 'center',
-//     marginBottom: 15,
-//     borderWidth: 1,
-//     borderColor: '#ddd',
-//   },
-//   photoButtonText: {
-//     color: '#555',
-//     fontSize: 16,
-//     fontWeight: '500',
-//   },
-//   dropdownContainer: {
-//     borderWidth: 1,
-//     borderColor: '#8B0000',
-//     borderRadius: 8,
-//     marginBottom: 15,
-//     overflow: 'hidden',
-//     backgroundColor: '#fff',
-//   },
-//   picker: {
-//     height: 50,
-//     width: '100%',
-//     color: '#8B0000',
-//     fontSize: 16,
-//   },
-//   description: {
-//     height: 110,
-//     borderWidth: 1,
-//     borderColor: '#ddd',
-//     borderRadius: 10,
-//     textAlignVertical: 'top',
-//     paddingHorizontal: 12,
-//     paddingVertical: 10,
-//     marginBottom: 15,
-//     fontSize: 15,
-//     color: '#333',
-//     backgroundColor: '#fdfdfd',
-//   },
-//   reportIcon: {
-//     width: 26,
-//     height: 26,
-//     marginRight: 8,
-//   },
-//   reportButton: {
-//     backgroundColor: '#8B0000',
-//     paddingVertical: 14,
-//     borderRadius: 10,
-//     alignItems: 'center',
-//     flexDirection: 'row',
-//     justifyContent: 'center',
-//     shadowColor: '#000',
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 4,
-//     elevation: 3,
-//   },
-//   reportButtonText: {
-//     color: '#fff',
-//     fontWeight: 'bold',
-//     fontSize: 16,
-//   },
-// });
-
-
-// export default Signalement;
-
-
-
-
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -163,7 +15,7 @@ import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
-import MapView, { Marker } from "react-native-maps";
+import { WebView } from "react-native-webview";
 import { API_URL } from "../constants/api";
 
 export default function Signalement() {
@@ -198,7 +50,9 @@ export default function Signalement() {
         setAutorites(data);
         if (data.length > 0) setSelectedService(data[0]._id);
       })
-      .catch(() => Alert.alert("Erreur", "Impossible de charger les autorités"));
+      .catch(() =>
+        Alert.alert("Erreur", "Impossible de charger les autorités")
+      );
   }, []);
 
   // Obtenir la position actuelle
@@ -229,7 +83,10 @@ export default function Signalement() {
   // Soumettre le signalement
   const handleSubmit = async () => {
     if (!description || !selectedService || !location || !image) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs et prendre une photo");
+      Alert.alert(
+        "Erreur",
+        "Veuillez remplir tous les champs et prendre une photo"
+      );
       return;
     }
 
@@ -277,19 +134,39 @@ export default function Signalement() {
       <View style={styles.container}>
         {/* Carte avec localisation */}
         {location ? (
-          <MapView
+          <WebView
             style={styles.map}
-            initialRegion={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
+            originWhitelist={["*"]}
+            source={{
+              html: `
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+          </head>
+          <body>
+            <div id="map" style="width:100vw;height:100vh;"></div>
+            <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+            <script>
+              var map = L.map('map').setView([${location.latitude}, ${location.longitude}], 16);
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+              }).addTo(map);
+              L.marker([${location.latitude}, ${location.longitude}]).addTo(map)
+                .bindPopup('Votre position')
+                .openPopup();
+            </script>
+          </body>
+        </html>
+      `,
             }}
-          >
-            <Marker coordinate={location} title="Votre position" />
-          </MapView>
+          />
         ) : (
-          <ActivityIndicator size="large" color="#8B0000" style={{ marginVertical: 20 }} />
+          <ActivityIndicator
+            size="large"
+            color="#8B0000"
+            style={{ marginVertical: 20 }}
+          />
         )}
 
         {/* Bouton photo */}
@@ -322,7 +199,11 @@ export default function Signalement() {
         />
 
         {/* Bouton signaler */}
-        <TouchableOpacity style={styles.reportButton} onPress={handleSubmit} disabled={loading}>
+        <TouchableOpacity
+          style={styles.reportButton}
+          onPress={handleSubmit}
+          disabled={loading}
+        >
           <Image
             source={require("../../assets/icons/logo jereo.png")}
             style={styles.reportIcon}

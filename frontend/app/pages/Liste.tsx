@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import Header from "../components/Header";
 import Navbar from "../components/Navbar";
-import MapView, { Marker } from "react-native-maps";
+import { WebView } from "react-native-webview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL, BASE_URL } from "../constants/api";
 
@@ -105,23 +105,34 @@ const HistoryScreen = () => {
                 />
 
                 {/* Carte Map */}
-                <MapView
+                {/* Carte Map */}
+                <WebView
                   style={styles.map}
-                  initialRegion={{
-                    latitude: report.lieux.latitude,
-                    longitude: report.lieux.longitude,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
+                  originWhitelist={["*"]}
+                  source={{
+                    html: `
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        </head>
+        <body>
+          <div id="map" style="width:100vw;height:100vh;"></div>
+          <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+          <script>
+            var map = L.map('map').setView([${report.lieux.latitude}, ${report.lieux.longitude}], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              maxZoom: 19,
+            }).addTo(map);
+            L.marker([${report.lieux.latitude}, ${report.lieux.longitude}]).addTo(map)
+              .bindPopup('Incident')
+              .openPopup();
+          </script>
+        </body>
+      </html>
+    `,
                   }}
-                >
-                  <Marker
-                    coordinate={{
-                      latitude: report.lieux.latitude,
-                      longitude: report.lieux.longitude,
-                    }}
-                    title="Incident"
-                  />
-                </MapView>
+                />
               </View>
 
               {/* Date ou temps (simplifié ici) */}

@@ -14,8 +14,6 @@ import Navbar from "../components/Navbar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL, BASE_URL } from "../constants/api";
 import { WebView } from "react-native-webview";
-import OSMMapView, { Marker } from "react-native-maps-osmdroid";
-
 
 const Accueil = () => {
   const [token, setToken] = useState<string | null>(null);
