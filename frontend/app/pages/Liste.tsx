@@ -105,7 +105,6 @@ const HistoryScreen = () => {
                 />
 
                 {/* Carte Map */}
-                {/* Carte Map */}
                 <WebView
                   style={styles.map}
                   originWhitelist={["*"]}
@@ -117,7 +116,7 @@ const HistoryScreen = () => {
           <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
         </head>
         <body>
-          <div id="map" style="width:100vw;height:100vh;"></div>
+          <div id="map" style="width:100vw;height:100vh;border-radius: 8px;"></div>
           <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
           <script>
             var map = L.map('map').setView([${report.lieux.latitude}, ${report.lieux.longitude}], 16);
@@ -198,7 +197,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   map: {
-    width: "48%",
+    width: "100%",
     height: 100,
     borderRadius: 8,
   },

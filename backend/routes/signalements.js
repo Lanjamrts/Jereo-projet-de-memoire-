@@ -4,6 +4,8 @@ const { auth, requireRole } = require("../middlewares/auth");
 
 const router = express.Router();
 
+const Notification = require("../models/Notification");
+
 // GET : Liste des signalements
 router.get("/", auth, async (req, res) => {
   try {
@@ -34,7 +36,8 @@ router.put("/:id", auth, requireRole("admin"), async (req, res) => {
   try {
     const { description } = req.body;
     const sig = await Signaler.findById(req.params.id);
-    if (!sig) return res.status(404).json({ message: "Signalement introuvable" });
+    if (!sig)
+      return res.status(404).json({ message: "Signalement introuvable" });
 
     sig.description = description || sig.description;
     await sig.save();
@@ -48,7 +51,8 @@ router.put("/:id", auth, requireRole("admin"), async (req, res) => {
 router.delete("/:id", auth, requireRole("admin"), async (req, res) => {
   try {
     const sig = await Signaler.findById(req.params.id);
-    if (!sig) return res.status(404).json({ message: "Signalement introuvable" });
+    if (!sig)
+      return res.status(404).json({ message: "Signalement introuvable" });
 
     await sig.deleteOne();
     res.json({ message: "Signalement supprimé" });
@@ -60,16 +64,33 @@ router.delete("/:id", auth, requireRole("admin"), async (req, res) => {
 // PUT : Modifier le statut
 router.put("/:id/status", auth, async (req, res) => {
   try {
+    const { message } = req.body;
     const { status } = req.body;
     const sig = await Signaler.findById(req.params.id);
-    if (!sig) return res.status(404).json({ message: "Signalement introuvable" });
+    if (!sig)
+      return res.status(404).json({ message: "Signalement introuvable" });
 
     // Autorité peut modifier le status seulement de SES signalements
     if (req.user.role === "autorite") {
-      if (!sig.autoriteId || sig.autoriteId.toString() !== req.user.autoriteId.toString()) {
+      if (
+        !sig.autoriteId ||
+        sig.autoriteId.toString() !== req.user.autoriteId.toString()
+      ) {
         return res.status(403).json({ message: "Non autorisé" });
       }
     }
+
+    const notif = await Notification.create({
+      emailSignaleur: sig.emailSignaleur, // basé sur l’email
+      signalementId: sig._id,
+      autoriteName: req.user.firstName + " " + req.user.lastName,
+      imageUrl: sig.imageUrl,
+      message: message || `Votre signalement a été ${status.toLowerCase()}`,
+    });
+
+    // Envoyer au frontend en temps réel
+    const sendNotification = req.app.get("sendNotification");
+    sendNotification(sig.emailSignaleur, notif);
 
     sig.status = status || sig.status;
     await sig.save();
@@ -80,5 +101,38 @@ router.put("/:id/status", auth, async (req, res) => {
   }
 });
 
+// router.put("/:id/status", auth, async (req, res) => {
+//   try {
+//     const { status, message } = req.body;
+//     const sig = await Signaler.findById(req.params.id);
+//     if (!sig) return res.status(404).json({ message: "Signalement introuvable" });
+
+//     if (req.user.role === "autorite") {
+//       if (!sig.autoriteId || sig.autoriteId.toString() !== req.user.autoriteId.toString()) {
+//         return res.status(403).json({ message: "Non autorisé" });
+//       }
+//     }
+
+//     sig.status = status || sig.status;
+//     await sig.save();
+
+//     // Créer une notification
+//     const notif = await Notification.create({
+//       emailSignaleur: sig.emailSignaleur, // basé sur l’email
+//       signalementId: sig._id,
+//       autoriteName: req.user.firstName + " " + req.user.lastName,
+//       imageUrl: sig.imageUrl,
+//       message: message || `Votre signalement a été ${status.toLowerCase()}`,
+//     });
+
+//     // Envoyer au frontend en temps réel
+//     const sendNotification = req.app.get("sendNotification");
+//     sendNotification(sig.emailSignaleur, notif);
+
+//     res.json(sig);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// });
 
 module.exports = router;

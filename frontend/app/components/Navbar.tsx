@@ -52,7 +52,7 @@ const Navbar = () => {
         </TouchableOpacity>
       </Link>
 
-      {/* Bouton Profil */}
+      {/* Bouton historique */}
       <Link href="../pages/Liste" asChild>
         <TouchableOpacity style={styles.navItem}>
           <Image
@@ -69,7 +69,7 @@ const Navbar = () => {
               pathname === "/pages/Liste" && styles.activeLabel
             ]}
           >
-            Profil
+            Historique
           </Text>
         </TouchableOpacity>
       </Link>
