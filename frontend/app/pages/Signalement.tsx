@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { WebView } from "react-native-webview";
 import { API_URL } from "../constants/api";
+import io from 'socket.io-client';
 
 export default function Signalement() {
   const [selectedService, setSelectedService] = useState("");
@@ -25,6 +26,7 @@ export default function Signalement() {
   const [autorites, setAutorites] = useState<any[]>([]);
   const [location, setLocation] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [socket, setSocket] = useState<any>(null);
 
   // Récupérer infos user depuis AsyncStorage
   const [userEmail, setUserEmail] = useState("");
@@ -41,6 +43,23 @@ export default function Signalement() {
     };
     fetchUser();
   }, []);
+
+  useEffect(() => {
+    // Initialiser Socket.IO
+    const newSocket = io(API_URL);
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (socket && userEmail) {
+      // Enregistrer l'utilisateur pour recevoir les notifications
+      socket.emit('register', userEmail);
+    }
+  }, [socket, userEmail]);
 
   // Charger la liste des autorités depuis le backend
   useEffect(() => {
@@ -117,7 +136,8 @@ export default function Signalement() {
       });
 
       if (!response.ok) throw new Error("Erreur lors de l'envoi");
-      Alert.alert("Succès", "Signalement envoyé !");
+      
+      Alert.alert("Succès", "Signalement envoyé ! Vous recevrez une notification de confirmation.");
       setDescription("");
       setImage(null);
     } catch (error) {

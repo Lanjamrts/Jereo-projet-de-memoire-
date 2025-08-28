@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Image, Text, Modal, ScrollView } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Image, Text, Modal, ScrollView, Alert } from 'react-native';
 import { API_URL } from '../constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
@@ -44,6 +44,14 @@ const Header = () => {
       socket.on('notification', (notification: Notification) => {
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
+        
+        // Afficher une alerte pour les nouvelles notifications
+        if (notification.message.includes("Signalement envoyé")) {
+          // Ne pas afficher d'alerte pour les notifications de confirmation d'envoi
+          // car l'utilisateur vient juste d'envoyer le signalement
+        } else {
+          Alert.alert('Nouvelle notification', notification.message);
+        }
       });
 
       registerUser();
