@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Notification = require("../models/Notification");
 
-// Récupérer les notifications d’un utilisateur (par email)
+// Récupérer les notifications d'un utilisateur (par email)
 router.get("/:email", async (req, res) => {
   try {
     const notifs = await Notification.find({
