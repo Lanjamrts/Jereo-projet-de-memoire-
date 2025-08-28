@@ -91,7 +91,7 @@ router.put("/:id/status", auth, async (req, res) => {
     const notif = await Notification.create({
       emailSignaleur: sig.emailSignaleur,
       signalementId: sig._id,
-      autoriteName: req.user.firstName + " " + req.user.lastName,
+      autoriteId: sig.autoriteId,
       imageUrl: sig.imageUrl,
       message: message || `Votre signalement a été ${status.toLowerCase()}`,
     });

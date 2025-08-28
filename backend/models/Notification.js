@@ -3,7 +3,11 @@ const mongoose = require("mongoose");
 const notificationSchema = new mongoose.Schema({
   emailSignaleur: { type: String, required: true },
   signalementId: { type: mongoose.Schema.Types.ObjectId, ref: "Signaler", required: true },
-  autoriteName: { type: String, required: true },
+  autoriteId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Autorite',
+    required: true
+  },
   imageUrl: { type: String, required: true },
   message: { type: String, required: true },
   status: { type: String, enum: ["non_lu", "lu"], default: "non_lu" },

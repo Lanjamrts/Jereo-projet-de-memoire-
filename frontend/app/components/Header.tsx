@@ -10,8 +10,13 @@ interface Notification {
   status: string;
   createdAt: string;
   imageUrl: string;
-  autoriteName: string;
-  autoriteId?: any; // Ajout de cette propriété optionnelle
+  autoriteId: string;
+  autoriteName?: string;
+}
+
+interface Autorite {
+  _id: string;
+  nom: string;
 }
 
 const Header = () => {
@@ -19,9 +24,9 @@ const Header = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [socket, setSocket] = useState<any>(null);
+  const [autorites, setAutorites] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Initialiser la connexion Socket.IO
     const newSocket = io(API_URL);
     setSocket(newSocket);
 
@@ -31,8 +36,27 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
+    const loadAutorites = async () => {
+      try {
+        const response = await fetch(`${API_URL}/autorites`);
+        const data = await response.json();
+        
+        const autoritesMap: Record<string, string> = {};
+        data.forEach((autorite: Autorite) => {
+          autoritesMap[autorite._id] = autorite.nom;
+        });
+        
+        setAutorites(autoritesMap);
+      } catch (error) {
+        console.error('Erreur lors du chargement des autorités:', error);
+      }
+    };
+
+    loadAutorites();
+  }, []);
+
+  useEffect(() => {
     if (socket) {
-      // Enregistrer l'utilisateur auprès du serveur
       const registerUser = async () => {
         const user = await AsyncStorage.getItem('user');
         if (user) {
@@ -41,16 +65,20 @@ const Header = () => {
         }
       };
 
-      // Écouter les nouvelles notifications
       socket.on('notification', (notification: Notification) => {
-        setNotifications(prev => [notification, ...prev]);
+        const autoriteName = notification.autoriteId && autorites[notification.autoriteId] 
+          ? autorites[notification.autoriteId] 
+          : "Autorité inconnue";
+        
+        const notificationWithAutoriteName = {
+          ...notification,
+          autoriteName
+        };
+        
+        setNotifications(prev => [notificationWithAutoriteName, ...prev]);
         setUnreadCount(prev => prev + 1);
         
-        // Afficher une alerte pour les nouvelles notifications
-        if (notification.message.includes("Signalement envoyé")) {
-          // Ne pas afficher d'alerte pour les notifications de confirmation d'envoi
-          // car l'utilisateur vient juste d'envoyer le signalement
-        } else {
+        if (!notification.message.includes("Signalement envoyé")) {
           Alert.alert('Nouvelle notification', notification.message);
         }
       });
@@ -63,10 +91,9 @@ const Header = () => {
         socket.off('notification');
       }
     };
-  }, [socket]);
+  }, [socket, autorites]);
 
   useEffect(() => {
-    // Charger les notifications existantes
     const loadNotifications = async () => {
       try {
         const user = await AsyncStorage.getItem('user');
@@ -74,9 +101,16 @@ const Header = () => {
           const parsedUser = JSON.parse(user);
           const response = await fetch(`${API_URL}/notifications/${parsedUser.email}`);
           const data = await response.json();
-          setNotifications(data);
           
-          // Compter les notifications non lues
+          const notificationsWithAutoriteNames = data.map((notification: Notification) => ({
+            ...notification,
+            autoriteName: notification.autoriteId && autorites[notification.autoriteId] 
+              ? autorites[notification.autoriteId] 
+              : "Autorité inconnue"
+          }));
+          
+          setNotifications(notificationsWithAutoriteNames);
+          
           const unread = data.filter((n: Notification) => n.status === 'non_lu').length;
           setUnreadCount(unread);
         }
@@ -85,8 +119,10 @@ const Header = () => {
       }
     };
 
-    loadNotifications();
-  }, []);
+    if (Object.keys(autorites).length > 0) {
+      loadNotifications();
+    }
+  }, [autorites]);
 
   const markAsRead = async (id: string) => {
     try {
@@ -111,27 +147,12 @@ const Header = () => {
 
   const openNotifications = () => {
     setModalVisible(true);
-    // Marquer toutes comme lues quand on ouvre la modal
     notifications.forEach(notif => {
       if (notif.status === 'non_lu') {
         markAsRead(notif._id);
       }
     });
     setUnreadCount(0);
-  };
-
-  // Fonction pour obtenir le nom de l'autorité
-  const getAutoriteName = (notification: Notification): string => {
-    if (notification.autoriteName && notification.autoriteName !== "undefined undefined") {
-      return notification.autoriteName;
-    }
-    
-    // Fallback si autoriteName n'est pas disponible
-    if (notification.message.includes("Système")) {
-      return "Système Jereo";
-    }
-    
-    return "Autorité non spécifiée";
   };
 
   return (
@@ -191,7 +212,7 @@ const Header = () => {
                     <View style={styles.notificationContent}>
                       <Text style={styles.notificationMessage}>{notification.message}</Text>
                       <Text style={styles.notificationAuthor}>
-                        Par: {getAutoriteName(notification)}
+                        Par: {notification.autoriteName}
                       </Text>
                       <Text style={styles.notificationDate}>
                         {new Date(notification.createdAt).toLocaleDateString()}
