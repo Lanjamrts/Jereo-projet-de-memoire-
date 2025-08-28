@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Image, Text, Modal, ScrollView, Alert } from 'react-native';
-import { API_URL } from '../constants/api';
+import { API_URL, BASE_URL } from '../constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 
@@ -11,6 +11,7 @@ interface Notification {
   createdAt: string;
   imageUrl: string;
   autoriteName: string;
+  autoriteId?: any; // Ajout de cette propriété optionnelle
 }
 
 const Header = () => {
@@ -119,6 +120,20 @@ const Header = () => {
     setUnreadCount(0);
   };
 
+  // Fonction pour obtenir le nom de l'autorité
+  const getAutoriteName = (notification: Notification): string => {
+    if (notification.autoriteName && notification.autoriteName !== "undefined undefined") {
+      return notification.autoriteName;
+    }
+    
+    // Fallback si autoriteName n'est pas disponible
+    if (notification.message.includes("Système")) {
+      return "Système Jereo";
+    }
+    
+    return "Autorité non spécifiée";
+  };
+
   return (
     <View style={styles.header}>
       <Image
@@ -170,12 +185,14 @@ const Header = () => {
                 notifications.map(notification => (
                   <View key={notification._id} style={styles.notificationItem}>
                     <Image
-                      source={{ uri: `${API_URL}${notification.imageUrl}` }}
+                      source={{ uri: `${BASE_URL}${notification.imageUrl}` }}
                       style={styles.notificationImage}
                     />
                     <View style={styles.notificationContent}>
                       <Text style={styles.notificationMessage}>{notification.message}</Text>
-                      <Text style={styles.notificationAuthor}>Par: {notification.autoriteName}</Text>
+                      <Text style={styles.notificationAuthor}>
+                        Par: {getAutoriteName(notification)}
+                      </Text>
                       <Text style={styles.notificationDate}>
                         {new Date(notification.createdAt).toLocaleDateString()}
                       </Text>
