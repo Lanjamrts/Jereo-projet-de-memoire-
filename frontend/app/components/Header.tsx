@@ -3,6 +3,7 @@ import { View, TouchableOpacity, StyleSheet, Image, Text, Modal, ScrollView, Ale
 import { API_URL, BASE_URL } from '../constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
+import { useRouter } from 'expo-router';
 
 interface Notification {
   _id: string;
@@ -25,6 +26,8 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [socket, setSocket] = useState<any>(null);
   const [autorites, setAutorites] = useState<Record<string, string>>({});
+  
+  const router = useRouter();
 
   useEffect(() => {
     const newSocket = io(API_URL);
@@ -176,7 +179,7 @@ const Header = () => {
           )}
         </TouchableOpacity>
         
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/pages/Profil')}>
           <Image
             source={require('../../assets/icons/profil.png')}
             style={styles.profileIcon}

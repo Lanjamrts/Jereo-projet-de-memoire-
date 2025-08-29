@@ -59,3 +59,60 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { firstName, lastName, birthDate, email } = req.body;
+    const userId = req.user.id;
+
+    // Vérifier si l'email est déjà utilisé par un autre utilisateur
+    if (email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: "Cet email est déjà utilisé" });
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { firstName, lastName, birthDate, email },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({ 
+      message: "Profil mis à jour avec succès", 
+      user: updatedUser 
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    // Vérifier le mot de passe actuel
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Mot de passe actuel incorrect" });
+    }
+
+    // Hasher le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Mettre à jour le mot de passe
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Mot de passe modifié avec succès" });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
