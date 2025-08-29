@@ -7,8 +7,9 @@ const userSchema = new mongoose.Schema(
     birthDate: { type: Date, required: true },
     email:     { type: String, required: true, unique: true },
     password:  { type: String, required: true },
+    profilePicture: { type: String, default: null }, // Nouveau champ pour la photo de profil
 
-    // NEW: role
+    // role
     role: {
       type: String,
       enum: ["user", "autorite", "admin"],
@@ -16,7 +17,7 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
-    // NEW: si role = autorite, on relie à la collection Autorite
+    // si role = autorite, on relie à la collection Autorite
     autoriteId: { type: mongoose.Schema.Types.ObjectId, ref: "Autorite", default: null },
   },
   { timestamps: true }

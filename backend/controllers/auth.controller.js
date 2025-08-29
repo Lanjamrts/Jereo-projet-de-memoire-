@@ -1,6 +1,41 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// Configuration de multer pour le stockage des images
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads/profile-pictures';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+// Filtre pour n'accepter que les images
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Seules les images sont autorisées'), false);
+  }
+};
+
+exports.upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max
+  }
+});
 
 exports.register = async (req, res) => {
   try {
@@ -11,12 +46,19 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Gérer l'image de profil si elle est fournie
+    let profilePicture = null;
+    if (req.file) {
+      profilePicture = req.file.path;
+    }
+
     const newUser = await User.create({
       firstName,
       lastName,
       birthDate,
       email,
       password: hashedPassword,
+      profilePicture,
       role: role || "user",
       autoriteId: role === "autorite" ? autoriteId || null : null
     });
