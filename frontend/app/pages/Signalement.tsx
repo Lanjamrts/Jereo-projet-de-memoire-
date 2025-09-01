@@ -17,7 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { WebView } from "react-native-webview";
 import { API_URL } from "../constants/api";
-import io from 'socket.io-client';
+import io from "socket.io-client";
 
 export default function Signalement() {
   const [selectedService, setSelectedService] = useState("");
@@ -57,7 +57,7 @@ export default function Signalement() {
   useEffect(() => {
     if (socket && userEmail) {
       // Enregistrer l'utilisateur pour recevoir les notifications
-      socket.emit('register', userEmail);
+      socket.emit("register", userEmail);
     }
   }, [socket, userEmail]);
 
@@ -120,7 +120,6 @@ export default function Signalement() {
       formData.append("emailSignaleur", userEmail);
       formData.append("nomSignaleur", userName);
 
-      // Image
       formData.append("image", {
         uri: image,
         name: "photo.jpg",
@@ -135,13 +134,28 @@ export default function Signalement() {
         },
       });
 
-      if (!response.ok) throw new Error("Erreur lors de l'envoi");
-      
-      Alert.alert("Succès", "Signalement envoyé ! Vous recevrez une notification de confirmation.");
+      const responseText = await response.text();
+      console.log("Réponse du serveur:", responseText);
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${responseText}`);
+      }
+
+      Alert.alert("Succès", "Signalement envoyé !");
       setDescription("");
       setImage(null);
     } catch (error) {
-      Alert.alert("Erreur", "Impossible d'envoyer le signalement");
+      // Vérification du type de l'erreur
+      if (error instanceof Error) {
+        console.error("Erreur détaillée:", error);
+        Alert.alert(
+          "Erreur",
+          error.message || "Impossible d'envoyer le signalement"
+        );
+      } else {
+        console.error("Erreur inconnue:", error);
+        Alert.alert("Erreur", "Une erreur inconnue s'est produite");
+      }
     } finally {
       setLoading(false);
     }
