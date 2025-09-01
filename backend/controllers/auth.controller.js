@@ -5,7 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Configuration de multer pour le stockage des images
+// Configuration de multer pour le stockage des images (déclarée une seule fois)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = 'uploads/profile-pictures';
@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
   }
 });
 
-// Filtre pour n'accepter que les images
+// Filtre pour n'accepter que les images (déclarée une seule fois)
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
@@ -93,6 +93,7 @@ exports.login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        profilePicture: user.profilePicture,
         role: user.role,
         autorite: user.autoriteId ? { id: user.autoriteId._id, nom: user.autoriteId.nom } : null
       }
@@ -123,6 +124,80 @@ exports.updateProfile = async (req, res) => {
 
     res.status(200).json({ 
       message: "Profil mis à jour avec succès", 
+      user: updatedUser 
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+exports.updateProfilePicture = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Vérifier si un fichier a été uploadé
+    if (!req.file) {
+      return res.status(400).json({ message: "Aucune image fournie" });
+    }
+
+    const profilePicture = req.file.path;
+
+    // Trouver l'utilisateur pour obtenir le chemin de l'ancienne image
+    const user = await User.findById(userId);
+    if (user && user.profilePicture) {
+      // Supprimer l'ancienne image du système de fichiers
+      const oldFilePath = path.join(__dirname, '..', user.profilePicture);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+
+    // Mettre à jour l'utilisateur
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePicture },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({ 
+      message: "Photo de profil mise à jour avec succès", 
+      user: updatedUser 
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+exports.deleteProfilePicture = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Trouver l'utilisateur pour obtenir le chemin de l'image actuelle
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    // Si l'utilisateur a une photo de profil, la supprimer du système de fichiers
+    if (user.profilePicture) {
+      // Chemin complet du fichier
+      const filePath = path.join(__dirname, '..', user.profilePicture);
+      
+      // Vérifier si le fichier existe et le supprimer
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Mettre à jour l'utilisateur pour supprimer la référence à la photo
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePicture: null },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({ 
+      message: "Photo de profil supprimée avec succès", 
       user: updatedUser 
     });
   } catch (error) {

@@ -12,16 +12,26 @@ import {
   Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../constants/api';
+import { API_URL, BASE_URL } from '../constants/api';
 import Header from '../components/Header';
 import Navbar from '../components/Navbar';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+
+// Définir un type pour l'image
+type ImageInfo = {
+  uri: string;
+  name?: string;
+  type?: string;
+};
 
 const Profil = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -57,6 +67,129 @@ const Profil = () => {
       Alert.alert('Erreur', 'Impossible de charger les données utilisateur');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission requise', 'Nous avons besoin de la permission pour accéder à vos photos.');
+        return;
+      }
+
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadProfilePicture(result.assets[0]);
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de sélectionner une image');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission requise', 'Nous avons besoin de la permission pour utiliser la caméra.');
+        return;
+      }
+
+      let result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadProfilePicture(result.assets[0]);
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de prendre une photo');
+    }
+  };
+
+  const uploadProfilePicture = async (imageAsset: any) => {
+    try {
+      setUploadingImage(true);
+      setImageModalVisible(false);
+
+      const token = await AsyncStorage.getItem('token');
+      
+      // Créer un FormData pour l'upload
+      const formData = new FormData();
+      const uriParts = imageAsset.uri.split('.');
+      const fileExtension = uriParts[uriParts.length - 1];
+      const fileName = `profile-${Date.now()}.${fileExtension}`;
+      
+      formData.append('profilePicture', {
+        uri: imageAsset.uri,
+        name: fileName,
+        type: `image/${fileExtension}`,
+      } as any);
+
+      const response = await fetch(`${API_URL}/auth/profile-picture`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Mettre à jour les données dans AsyncStorage
+        const updatedUser = { ...user, profilePicture: data.user.profilePicture };
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        Alert.alert('Succès', 'Photo de profil mise à jour avec succès');
+      } else {
+        Alert.alert('Erreur', data.message || 'Erreur lors de la mise à jour de la photo');
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de mettre à jour la photo de profil');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeProfilePicture = async () => {
+    try {
+      setUploadingImage(true);
+      const token = await AsyncStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/auth/profile-picture`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Mettre à jour les données dans AsyncStorage
+        const updatedUser = { ...user, profilePicture: null };
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        Alert.alert('Succès', 'Photo de profil supprimée avec succès');
+      } else {
+        Alert.alert('Erreur', data.message || 'Erreur lors de la suppression de la photo');
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de supprimer la photo de profil');
+    } finally {
+      setUploadingImage(false);
+      setImageModalVisible(false);
     }
   };
 
@@ -146,10 +279,24 @@ const Profil = () => {
       
       <ScrollView style={styles.container}>
         <View style={styles.profileHeader}>
-          <Image
-            source={require('../../assets/profiles/kevinfal.jpg')}
-            style={styles.profileImage}
-          />
+          <TouchableOpacity onPress={() => setImageModalVisible(true)}>
+            {user?.profilePicture ? (
+              <Image
+                source={{ uri: `${BASE_URL}/${user.profilePicture}` }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <Image
+                source={require('../../assets/profiles/default-avatar.jpeg')}
+                style={styles.profileImage}
+              />
+            )}
+            {uploadingImage && (
+              <View style={styles.imageOverlay}>
+                <ActivityIndicator size="small" color="#fff" />
+              </View>
+            )}
+          </TouchableOpacity>
           <Text style={styles.profileName}>
             {user?.firstName} {user?.lastName}
           </Text>
@@ -301,6 +448,52 @@ const Profil = () => {
         </View>
       </Modal>
 
+      {/* Modal pour changer la photo de profil */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={imageModalVisible}
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Changer la photo de profil</Text>
+            
+            <View style={styles.imageButtonGroup}>
+              <TouchableOpacity
+                style={[styles.button, styles.imageButton]}
+                onPress={pickImage}
+              >
+                <Text style={styles.buttonText}>Choisir depuis la galerie</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.button, styles.imageButton]}
+                onPress={takePhoto}
+              >
+                <Text style={styles.buttonText}>Prendre une photo</Text>
+              </TouchableOpacity>
+              
+              {user?.profilePicture && (
+                <TouchableOpacity
+                  style={[styles.button, styles.removeButton]}
+                  onPress={removeProfilePicture}
+                >
+                  <Text style={styles.buttonText}>Supprimer la photo</Text>
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => setImageModalVisible(false)}
+              >
+                <Text style={styles.buttonText}>Annuler</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Navbar />
     </View>
   );
@@ -317,12 +510,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+    position: 'relative',
   },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
     marginBottom: 15,
+  },
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileName: {
     fontSize: 22,
@@ -369,12 +574,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 20,
   },
+  imageButtonGroup: {
+    marginTop: 10,
+  },
   button: {
     padding: 12,
     borderRadius: 5,
     alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 5,
+    marginVertical: 5,
+  },
+  imageButton: {
+    backgroundColor: '#8B0000',
+  },
+  removeButton: {
+    backgroundColor: '#dc3545',
   },
   editButton: {
     backgroundColor: '#8B0000',
