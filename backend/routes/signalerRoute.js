@@ -1,8 +1,8 @@
-// backend/routes/signalerRoute.js
 const express = require("express");
 const multer = require("multer");
 const Signaler = require("../models/Signaler");
 const Notification = require("../models/Notification");
+const User = require("../models/User");
 const path = require("path");
 const fs = require("fs");
 
@@ -29,7 +29,7 @@ router.post("/", uploadSignalement.single("image"), async (req, res) => {
     console.log("Fichier reçu:", req.file);
     console.log("Données reçues:", req.body);
 
-    const { description, latitude, longitude, autoriteId, emailSignaleur, nomSignaleur } = req.body;
+    const { description, latitude, longitude, autoriteId, emailSignaleur, nomSignaleur, userId } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: "Aucune image fournie" });
@@ -44,7 +44,8 @@ router.post("/", uploadSignalement.single("image"), async (req, res) => {
       imageUrl: `/uploads/${req.file.filename}`,
       emailSignaleur,
       nomSignaleur,
-      autoriteId
+      autoriteId,
+      user: userId // Ajout de la référence utilisateur
     });
 
     await signalement.save();
@@ -73,11 +74,40 @@ router.post("/", uploadSignalement.single("image"), async (req, res) => {
   }
 });
 
-// Récupérer tous les signalements
+// Récupérer tous les signalements avec les informations utilisateur
 router.get("/", async (req, res) => {
   try {
-    const signalements = await Signaler.find().populate("autoriteId");
+    const signalements = await Signaler.find()
+      .populate("autoriteId")
+      .populate({
+        path: "user",
+        select: "firstName lastName profilePicture", // Sélection des champs nécessaires
+        model: "User"
+      })
+      .sort({ dateSignalement: -1 }); // Tri par date décroissante
+
     res.json(signalements);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Récupérer un signalement spécifique
+router.get("/:id", async (req, res) => {
+  try {
+    const signalement = await Signaler.findById(req.params.id)
+      .populate("autoriteId")
+      .populate({
+        path: "user",
+        select: "firstName lastName profilePicture",
+        model: "User"
+      });
+
+    if (!signalement) {
+      return res.status(404).json({ message: "Signalement non trouvé" });
+    }
+
+    res.json(signalement);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

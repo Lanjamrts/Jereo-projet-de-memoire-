@@ -287,7 +287,7 @@ const Profil = () => {
               />
             ) : (
               <Image
-                source={require('../../assets/profiles/default-avatar.jpeg')}
+                source={require('../../assets/profiles/default-avatar.png')}
                 style={styles.profileImage}
               />
             )}

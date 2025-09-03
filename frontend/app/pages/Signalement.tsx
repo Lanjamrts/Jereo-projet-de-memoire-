@@ -31,6 +31,7 @@ export default function Signalement() {
   // Récupérer infos user depuis AsyncStorage
   const [userEmail, setUserEmail] = useState("");
   const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState(""); // Nouveau état pour l'ID utilisateur
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -39,6 +40,7 @@ export default function Signalement() {
         const parsedUser = JSON.parse(storedUser);
         setUserEmail(parsedUser.email);
         setUserName(`${parsedUser.firstName} ${parsedUser.lastName}`);
+        setUserId(parsedUser.id); // Récupérer l'ID utilisateur
       }
     };
     fetchUser();
@@ -109,6 +111,11 @@ export default function Signalement() {
       return;
     }
 
+    if (!userId) {
+      Alert.alert("Erreur", "Utilisateur non identifié. Veuillez vous reconnecter.");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -119,6 +126,7 @@ export default function Signalement() {
       formData.append("autoriteId", selectedService);
       formData.append("emailSignaleur", userEmail);
       formData.append("nomSignaleur", userName);
+      formData.append("userId", userId); // Ajout de l'ID utilisateur
 
       formData.append("image", {
         uri: image,
