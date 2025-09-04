@@ -128,7 +128,7 @@ const Accueil = () => {
     setSelectedFilter(status);
     if (status === "Tous") {
       setFilteredSignalements(signalements);
-    } else if (status === "En cours") {
+    } else if (status === "En attente") {
       setFilteredSignalements(
         signalements.filter((s) => s.status === "En attente")
       );
@@ -173,7 +173,7 @@ const Accueil = () => {
 
       {/* Filtres */}
       <View style={styles.filters}>
-        {["Tous", "En cours", "Pris en charge", "Resolu"].map(
+        {["Tous", "En attente", "Pris en charge", "Resolu"].map(
           (label, index) => (
             <TouchableOpacity
               key={index}

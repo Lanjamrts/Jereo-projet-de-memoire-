@@ -193,7 +193,7 @@ exports.deleteProfilePicture = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { profilePicture: null },
-      { new: true }
+      { new: true } 
     ).select("-password");
 
     res.status(200).json({ 

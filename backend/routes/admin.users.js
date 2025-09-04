@@ -17,7 +17,12 @@ router.get("/", auth, requireRole("admin"), async (req, res) => {
   }
   const skip = (Number(page) - 1) * Number(limit);
   const total = await User.countDocuments(q);
-  const data = await User.find(q).select("-password").skip(skip).limit(Number(limit)).sort({ createdAt: -1 });
+  const data = await User.find(q)
+    .select("-password")
+    .populate("autoriteId") // Populate autoriteId pour avoir les infos de l'autorité
+    .skip(skip)
+    .limit(Number(limit))
+    .sort({ createdAt: -1 });
   res.json({ data, total, page: Number(page), limit: Number(limit) });
 });
 
@@ -31,7 +36,9 @@ router.put("/:id/role", auth, requireRole("admin"), async (req, res) => {
   if (role === "autorite") update.autoriteId = autoriteId || null;
   else update.autoriteId = null;
 
-  const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select("-password");
+  const user = await User.findByIdAndUpdate(req.params.id, update, { new: true })
+    .select("-password")
+    .populate("autoriteId");
   if (!user) return res.status(404).json({ message: "Utilisateur introuvable" });
   res.json(user);
 });

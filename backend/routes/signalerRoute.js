@@ -56,7 +56,7 @@ router.post("/", uploadSignalement.single("image"), async (req, res) => {
       signalementId: signalement._id,
       autoriteId: autoriteId,
       imageUrl: `/uploads/${req.file.filename}`,
-      message: "Votre signalement a été envoyé avec succès et est en cours de traitement."
+      message: "Votre signalement a été envoyé avec succès."
     });
 
     await notif.save();

@@ -65,7 +65,7 @@ export default function LoginScreen() {
       <Button title="Se connecter" onPress={handleLogin} />
       
       {/* Connexion Google (non reliée) */}
-      <TouchableOpacity 
+      {/* <TouchableOpacity 
         style={[styles.button, styles.googleButton, { flexDirection: "row", alignItems: "center", justifyContent: "center" }]}
         onPress={() => console.log("Google login")}
       >
@@ -74,7 +74,7 @@ export default function LoginScreen() {
           style={{ width: 20, height: 20, marginRight: 8 }}
         />
         <Text style={styles.buttonText}>Un compte Google</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Lien vers inscription */}
       <View style={styles.footerContainer}>

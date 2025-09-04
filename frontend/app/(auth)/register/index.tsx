@@ -285,7 +285,7 @@ export default function RegisterScreen() {
         </TouchableOpacity>
 
         {/* Connexion Google (non reliée) */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.button, styles.googleButton, { flexDirection: "row", alignItems: "center", justifyContent: "center" }]}
           onPress={() => console.log("Google login")}
         >
@@ -294,7 +294,7 @@ export default function RegisterScreen() {
             style={{ width: 20, height: 20, marginRight: 8 }}
           />
           <Text style={styles.buttonText}>Un compte Google</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Lien vers Connexion */}
         <View style={styles.footerContainer}>
